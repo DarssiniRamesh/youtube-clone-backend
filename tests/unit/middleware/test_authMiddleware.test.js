@@ -4,6 +4,10 @@ const { protect, admin } = require("../../../src/middlewares/auth");
 const mockUserModel = {
   findOne: jest.fn(),
 };
+const mockUserModel = {
+  findOne: jest.fn(),
+};
+
 jest.mock("jsonwebtoken");
 jest.mock("../../../src/sequelize", () => ({
   User: mockUserModel,
