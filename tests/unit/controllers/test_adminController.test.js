@@ -19,6 +19,12 @@ describe('Admin Controller Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalled();
     });
+    it('handles DB errors gracefully', async () => {
+      const error = new Error('DB down');
+      User.findAll.mockRejectedValue(error);
+      await getUsers(req, res, next);
+      expect(next).toHaveBeenCalledWith(error);
+    });
   });
 
   describe('removeUser', () => {
@@ -27,6 +33,28 @@ describe('Admin Controller Unit Tests', () => {
       User.destroy.mockResolvedValue(1);
       await removeUser(req, res, next);
       expect(res.status).toHaveBeenCalledWith(200);
+    });
+    it('returns 404 if user not found', async () => {
+      req.params.username = "missing";
+      User.destroy.mockResolvedValue(0);
+      await removeUser(req, res, next);
+      expect(next).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.any(String),
+          statusCode: 404,
+        })
+      );
+    });
+    it('handles DB error for user removal', async () => {
+      req.params.username = "xuser";
+      User.destroy.mockRejectedValue(new Error('DB error'));
+      await removeUser(req, res, next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+    });
+    it('calls next with error if username missing', async () => {
+      req.params.username = undefined;
+      await removeUser(req, res, next);
+      expect(next).toHaveBeenCalled();
     });
   });
 
@@ -37,6 +65,28 @@ describe('Admin Controller Unit Tests', () => {
       await removeVideo(req, res, next);
       expect(res.status).toHaveBeenCalledWith(200);
     });
+    it('returns 404 for non-existent video', async () => {
+      req.params.id = 999;
+      Video.destroy.mockResolvedValue(0);
+      await removeVideo(req, res, next);
+      expect(next).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.any(String),
+          statusCode: 404,
+        })
+      );
+    });
+    it('handles DB error on video removal', async () => {
+      req.params.id = 11;
+      Video.destroy.mockRejectedValue(new Error('DB err'));
+      await removeVideo(req, res, next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
+    });
+    it('calls next with error if id missing', async () => {
+      req.params.id = undefined;
+      await removeVideo(req, res, next);
+      expect(next).toHaveBeenCalled();
+    });
   });
 
   describe('getVideos', () => {
@@ -45,6 +95,11 @@ describe('Admin Controller Unit Tests', () => {
       await getVideos(req, res, next);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalled();
+    });
+    it('handles DB errors gracefully', async () => {
+      Video.findAll.mockRejectedValue(new Error('DB error'));
+      await getVideos(req, res, next);
+      expect(next).toHaveBeenCalledWith(expect.any(Error));
     });
   });
 });
