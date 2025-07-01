@@ -22,6 +22,12 @@ describe('Video Controller Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ success: true, data: { id: 1 } });
     });
+
+    it('handles DB error when creating new video', async () => {
+      Video.create.mockRejectedValue(new Error('DB error'));
+      await newVideo(req, res, next);
+      expect(next).toHaveBeenCalled();
+    });
   });
 
   describe('getVideo', () => {

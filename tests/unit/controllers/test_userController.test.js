@@ -31,6 +31,21 @@ describe('User Controller Unit Tests', () => {
       expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: expect.any(String), statusCode: 404 }));
     });
 
+    it('should handle exception in User.findByPk gracefully', async () => {
+      req.user.id = 2; req.params.id = 5;
+      User.findByPk.mockRejectedValue(new Error('DB error'));
+      await toggleSubscribe(req, res, next);
+      expect(next).toHaveBeenCalled();
+    });
+
+    it('should handle exception in Subscription.findOne gracefully', async () => {
+      req.user.id = 2; req.params.id = 3;
+      User.findByPk.mockResolvedValue({});
+      Subscription.findOne.mockRejectedValue(new Error('DB error'));
+      await toggleSubscribe(req, res, next);
+      expect(next).toHaveBeenCalled();
+    });
+
     it('should subscribe if not subscribed yet', async () => {
       req.user.id = 2; req.params.id = 3;
       User.findByPk.mockResolvedValue({});
@@ -40,6 +55,15 @@ describe('User Controller Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
+    it('should handle error during Subscription.create gracefully', async () => {
+      req.user.id = 2; req.params.id = 3;
+      User.findByPk.mockResolvedValue({});
+      Subscription.findOne.mockResolvedValue(null);
+      Subscription.create.mockRejectedValue(new Error('DB error'));
+      await toggleSubscribe(req, res, next);
+      expect(next).toHaveBeenCalled();
+    });
+
     it('should unsubscribe if already subscribed', async () => {
       req.user.id = 2; req.params.id = 3;
       User.findByPk.mockResolvedValue({});
@@ -47,6 +71,15 @@ describe('User Controller Unit Tests', () => {
       Subscription.destroy.mockResolvedValue({});
       await toggleSubscribe(req, res, next);
       expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it('should handle error during Subscription.destroy gracefully', async () => {
+      req.user.id = 2; req.params.id = 3;
+      User.findByPk.mockResolvedValue({});
+      Subscription.findOne.mockResolvedValue({});
+      Subscription.destroy.mockRejectedValue(new Error('DB error'));
+      await toggleSubscribe(req, res, next);
+      expect(next).toHaveBeenCalled();
     });
   });
 
