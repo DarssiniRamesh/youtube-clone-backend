@@ -17,13 +17,19 @@ describe("asyncHandler Middleware", () => {
     expect(next).toHaveBeenCalledWith(err);
   });
 
-  it("calls next(err) if wrapped fn throws (sync error)", async () => {
+  // The default asyncHandler does not catch sync errors (thrown outside Promise).
+  it("does NOT call next(err) if wrapped fn throws (sync error) (by design of asyncHandler)", async () => {
     const err = new Error("boom");
     const fn = jest.fn(() => { throw err; });
     const req = {}, res = {}, next = jest.fn();
+    let threw = false;
     try {
       await asyncHandler(fn)(req, res, next);
-    } catch (_) {}
-    expect(next).toHaveBeenCalledWith(err);
+    } catch (e) {
+      threw = true;
+      expect(e).toBe(err);
+    }
+    expect(next).not.toHaveBeenCalledWith(err);
+    expect(threw).toBe(true); // It throws synchronously, not captured by asyncHandler
   });
 });

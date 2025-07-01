@@ -1,10 +1,10 @@
 const jwt = require("jsonwebtoken");
 const { protect, admin } = require("../../../src/middlewares/auth");
 
-jest.mock("jsonwebtoken");
 const mockUserModel = {
   findOne: jest.fn(),
 };
+jest.mock("jsonwebtoken");
 jest.mock("../../../src/sequelize", () => ({
   User: mockUserModel,
 }));

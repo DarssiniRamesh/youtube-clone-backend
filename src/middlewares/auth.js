@@ -42,7 +42,7 @@ exports.protect = async (req, res, next) => {
 
 exports.admin = async (req, res, next) => {
   if (req.user.isAdmin) {
-    next();
+    return next();
   }
 
   return next({
