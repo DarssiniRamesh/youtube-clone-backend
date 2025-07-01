@@ -32,12 +32,23 @@ describe('User Routes Integration', () => {
     let resp = await request(app).put('/api/v1/user/').send({ firstname: "NewName" });
     expect(resp.statusCode).toBe(401);
 
-    // Setup: login user to get token (assume /api/v1/auth/login exists), or mock token injection here
-    // Use a valid token for positive/negative edge case simulation (pseudocode below):
-    // const loginResp = await request(app).post('/api/v1/auth/login').send({ email: 'test@email.com', password: 'pw' });
-    // const token = loginResp.body.data.token;
-    // resp = await request(app).put('/api/v1/user/').set('Authorization', `Bearer ${token}`).send({ firstname: "" });
-    // expect(resp.statusCode).toBe(400 or 422);
+    // Authenticated positive & validation edge
+    const loginResp = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'test@email.com', password: 'pw' });
+    expect(loginResp.statusCode).toBe(200);
+    const token = loginResp.body.data;
+    // Valid
+    resp = await request(app).put('/api/v1/user/')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ firstname: "NewName" });
+    expect([200, 201]).toContain(resp.statusCode);
+
+    // Invalid payload (missing required field)
+    resp = await request(app).put('/api/v1/user/')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ username: null, firstname: "Should Fail" });
+    expect([400, 422, 500]).toContain(resp.statusCode);
   });
 
   test('GET /api/v1/user/likedVideos - forbidden/edge cases', async () => {

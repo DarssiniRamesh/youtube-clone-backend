@@ -26,7 +26,24 @@ describe('Video Routes Integration', () => {
     let resp = await request(app).post('/api/v1/video/').send({ title: "Test Video", url: "fake.mp4" });
     expect(resp.statusCode).toBe(401);
 
-    // Insert more tests for invalid payload structure (with auth) when fully mocking tokens
+    // Insert more tests for invalid payload structure (with auth)
+    const loginResp = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'foo@bar.com', password: 'pw' });
+    expect(loginResp.statusCode).toBe(200);
+    const token = loginResp.body.data;
+
+    // Valid (simulate full object)
+    resp = await request(app).post('/api/v1/video/')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ title: "Full Video", url: "vid.mp4", thumbnail: "t.png", description: "desc" });
+    expect([200, 201]).toContain(resp.statusCode);
+
+    // Invalid/missing required property: url
+    resp = await request(app).post('/api/v1/video/')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ title: "Invalid", thumbnail: "t.png" });
+    expect([400, 422, 500]).toContain(resp.statusCode);
   });
 
   test('GET /api/v1/video/search needs auth', async () => {
